@@ -1,0 +1,158 @@
+package com.sci.smsonce;
+
+/**
+ * 2015-8-25上午11:04:08
+ * wangzhongyuan
+ */
+ 
+import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Rect;
+import android.util.AttributeSet;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+ 
+ 
+/**
+ * progressView 创建自定义进度条控件，只需为进度条提供两张纹理图像（一张为背景，一张用于显示进度）
+ * -----
+ * 2015-8-25 上午11:04:08 
+ * wangzhongyuan
+ */
+public class progressView extends RelativeLayout
+{
+	// 界面需要的图片
+	private Bitmap progressBack;	// 背景
+	private Bitmap progressfront;	// 进度
+	
+	public float progress = 63;		// 进度值
+	private TextView textView;		// 用于显示进度信息
+	
+	/**
+	 * 设置进度条的显示进度
+	 */
+	public void setProgress(float progress)
+	{
+		if (progress > 100)
+			this.progress = 100;
+		else if (progress < 0)
+			this.progress = 0;
+		else
+			this.progress = progress;
+		
+		textView.setText(this.progress + " %");	// 更新显示信息
+	}
+	
+	/**
+	 * 使用默认资源图像创建进度条
+	 */
+	public progressView(Context context)
+	{
+		super(context);
+		ViewInit(context, R.drawable.p_bg, R.drawable.p_front);
+	}
+	
+	/**
+	 * 使用默认资源图像创建进度条， -XML布局创建控件时，会调用该函数
+	 */
+	public progressView(Context context, AttributeSet attrs)
+	{
+		super(context, attrs);
+		
+		ViewInit(context, R.drawable.p_bg, R.drawable.p_front);
+		if (isInEditMode()) { return; }
+	}
+	
+	/**
+	 * 创建进度条，progress1和progress2为尺寸相同的图像
+	 * @param context
+	 * @param drawableID1	进度条背景图		R.drawable.progress1
+	 * @param drawableID2	进度条进度填充图	R.drawable.progress2
+	 */
+	public progressView(Context context, int drawableID1, int drawableID2)
+	{
+		super(context);
+		ViewInit(context, drawableID1, drawableID2);
+	}
+	
+	// 进度条控件初始化
+	private void ViewInit(Context context, int progress1, int progress2)
+	{
+		// 创建InnerView控件
+		InnerView innerView = new InnerView(context, progress1, progress2);
+		
+		// 创建进度条进度信息
+		textView = new TextView(context);
+		textView.setTextSize(innerView.height / 3);	// 设置字体大小
+		textView.setGravity(Gravity.CENTER);		// 居中于TextView
+		textView.setText(progress + " %");			// 设置进度信息
+		textView.setTextColor(Color.WHITE);			// 设置字体颜色
+		
+		// 控件主体部分为
+		RelativeLayout body = new RelativeLayout(context);
+		this.addView(body, centerLayout(innerView.width, innerView.height));
+		
+		// 添加进度条图像控件 和 进度信息到控件上
+		body.addView(innerView);
+		body.addView(textView, centerLayout(innerView.width, innerView.height));	// 居中于当前控件，显示进度信息
+	}
+	
+	// 获取居中布局参数
+	private RelativeLayout.LayoutParams centerLayout(int width, int height)
+	{
+		RelativeLayout.LayoutParams params1 = new RelativeLayout.LayoutParams(width, height);
+		params1.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+		
+		return params1;
+	}
+	
+	// 内部类，重写View的onDraw函数，实现进度条的绘制
+	private class InnerView extends View
+	{
+		public int width = 0, height = 0;	// 进度条的尺寸
+				
+		/**
+		 * 创建进度条，progress1和progress2为尺寸相同的图像
+		 * @param context
+		 * @param progress1	进度条背景图		R.drawable.progress1
+		 * @param progress2	进度条进度填充图	R.drawable.progress2
+		 */
+		public InnerView(Context context, int progress1, int progress2)
+		{
+			super(context);
+			ViewInit(context, progress1, progress2);
+		}
+		
+		// 转盘控件自身的初始化
+		private void ViewInit(Context context, int progress1, int progress2)
+		{
+			Resources r = context.getResources();
+			
+			// 从内部资源文件获取进度条图像
+			progressBack = BitmapFactory.decodeStream(r.openRawResource(progress1));
+			progressfront = BitmapFactory.decodeStream(r.openRawResource(progress2));
+			
+			width = progressBack.getWidth();
+			height = progressBack.getHeight();
+		}
+		
+		// 重写View类的onDraw()函数
+		protected void onDraw(Canvas canvas)
+		{
+			// 绘制进度条背景图
+			canvas.drawBitmap(progressBack, 0, 0, null);
+			
+			// 绘制进度条进度图
+			int w = (int) (width * progress / 100);
+			Rect srcRect = new Rect(0, 0, width, height);
+			Rect desRect = new Rect(0, 0, w, height);
+			canvas.drawBitmap(progressfront, srcRect, desRect, null);
+		}
+	}
+}
